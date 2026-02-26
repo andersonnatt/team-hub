@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engineering Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0e14;
+      --text: #b3b9c5;
+      --bright: #e8eaed;
+      --green: #39ff14;
+      --amber: #ffb700;
+      --dim: #4a5568;
+      --font: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+    }
+
+    html {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+    }
+
+    body {
+      max-width: 740px;
+      margin: 0 auto;
+      padding: 6rem 2rem 8rem;
+    }
+
+    /* CRT scanline overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        transparent 0px, transparent 2px,
+        rgba(0, 0, 0, 0.03) 2px, rgba(0, 0, 0, 0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* Vignette */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%);
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    a {
+      color: var(--green);
+      text-decoration: none;
+      text-shadow: 0 0 8px rgba(57, 255, 20, 0.15);
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .header {
+      margin-bottom: 4rem;
+    }
+
+    .header-prompt {
+      color: var(--green);
+      font-size: 1rem;
+      text-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      color: var(--bright);
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: var(--dim);
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+
+    /* Content sections */
+    .section {
+      margin-bottom: 3rem;
+    }
+
+    .section-header {
+      color: var(--dim);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--dim);
+    }
+
+    /* Content cards */
+    .card {
+      display: block;
+      padding: 1.2rem 1.5rem;
+      margin-bottom: 2px;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card:hover {
+      border-color: var(--green);
+      background: rgba(57, 255, 20, 0.03);
+      text-decoration: none;
+    }
+
+    .card-row {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+    }
+
+    .card-date {
+      color: var(--dim);
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      min-width: 6rem;
+    }
+
+    .card-type {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 0.15rem 0.5rem;
+      flex-shrink: 0;
+      min-width: 5.5rem;
+      text-align: center;
+    }
+
+    .card-type.article {
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+
+    .card-type.slides {
+      color: var(--amber);
+      border: 1px solid var(--amber);
+    }
+
+    .card-type.guide {
+      color: var(--bright);
+      border: 1px solid var(--bright);
+    }
+
+    .card-title {
+      color: var(--bright);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .card-desc {
+      color: var(--dim);
+      font-size: 0.95rem;
+      margin-top: 0.4rem;
+      padding-left: calc(6rem + 1rem + 5.5rem + 1rem);
+      line-height: 1.5;
+    }
+
+    /* Empty state for future sections */
+    .empty {
+      color: var(--dim);
+      font-size: 0.95rem;
+      padding: 1rem 1.5rem;
+      border: 1px dashed var(--dim);
+      text-align: center;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--dim);
+      color: var(--dim);
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 0.6em;
+      height: 1.1em;
+      background: var(--green);
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .card-row {
+        flex-direction: column;
+        gap: 0.3rem;
+      }
+      .card-desc {
+        padding-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <p class="header-prompt">$ cd ~/engineering-hub <span class="cursor"></span></p>
+    <h1>Engineering Hub</h1>
+    <p class="subtitle">Internal knowledge base. Talks, articles, guides, and references for the team.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- Recent                                  -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">Recent</div>
+
+    <a href="articles/the-new-dimension.html" class="card">
+      <div class="card-row">
+        <span class="card-date">2026-02-27</span>
+        <span class="card-type article">ARTICLE</span>
+        <span class="card-title">The New Dimension</span>
+      </div>
+      <p class="card-desc">What changed when coding became a commodity, and what it means for how we work. Framework, examples, and a challenge for the team.</p>
+    </a>
+
+    <a href="slides/the-new-dimension.html" class="card">
+      <div class="card-row">
+        <span class="card-date">2026-02-27</span>
+        <span class="card-type slides">SLIDES</span>
+        <span class="card-title">The New Dimension (Presentation)</span>
+      </div>
+      <p class="card-desc">Terminal-style slide deck from the team talk. Available in English and Ukrainian. Arrow keys to navigate, F for fullscreen.</p>
+    </a>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- Guides & References                     -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">Guides & References</div>
+    <div class="empty">Nothing here yet. Guides, onboarding docs, and reference material will live here.</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- Team Learnings                          -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">Team Learnings</div>
+    <div class="empty">Share what you find. AI workflows, tools, experiments, and insights from the team.</div>
+  </div>
+
+  <div class="footer">
+    <p>To add content: create an HTML file in <code>articles/</code>, <code>slides/</code>, or <code>guides/</code> and add a card to this page.</p>
+    <p>Consistent style: use JetBrains Mono, dark background (#0a0e14), green (#39ff14) accents.</p>
+  </div>
+
+</body>
+</html>
