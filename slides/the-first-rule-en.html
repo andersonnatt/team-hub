@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The First Rule</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --bg: #0a0e14;
+        --text: #b3b9c5;
+        --bright: #e8eaed;
+        --green: #39ff14;
+        --amber: #ffb700;
+        --dim: #4a5568;
+        --red: #ff6b6b;
+        --font:
+          "JetBrains Mono", "SF Mono", "Monaco", "Cascadia Code", "Consolas",
+          monospace;
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+      }
+
+      /* CRT scanline overlay */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: repeating-linear-gradient(
+          transparent 0px,
+          transparent 2px,
+          rgba(0, 0, 0, 0.03) 2px,
+          rgba(0, 0, 0, 0.03) 4px
+        );
+        pointer-events: none;
+        z-index: 1000;
+      }
+
+      /* Vignette */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(
+          ellipse at center,
+          transparent 50%,
+          rgba(0, 0, 0, 0.5) 100%
+        );
+        pointer-events: none;
+        z-index: 999;
+      }
+
+      /* Slides */
+      .slide {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 8vh 12vw;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.4s ease;
+        --gap: 0.12s;
+      }
+
+      .slide.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .slide--boot {
+        --gap: 0.3s;
+      }
+      .slide--pause {
+        --gap: 0.1s;
+      }
+
+      /* Line animation */
+      .line {
+        opacity: 0;
+      }
+
+      .slide.active .line {
+        animation: fadeIn 0.5s ease forwards;
+        animation-delay: calc(var(--i, 0) * var(--gap));
+      }
+
+      @keyframes fadeIn {
+        to {
+          opacity: 1;
+        }
+      }
+
+      /* Typography */
+      .hero {
+        font-size: 3.5rem;
+        font-weight: 700;
+        color: var(--bright);
+        line-height: 1.2;
+      }
+
+      .big {
+        font-size: 1.9rem;
+        color: var(--bright);
+        line-height: 1.4;
+      }
+
+      .body {
+        font-size: 1.35rem;
+        line-height: 1.6;
+      }
+
+      .small {
+        font-size: 1.1rem;
+        line-height: 1.5;
+      }
+
+      .dim {
+        color: var(--dim);
+      }
+      .green {
+        color: var(--green);
+        text-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+      }
+      .amber {
+        color: var(--amber);
+      }
+      .red {
+        color: var(--red);
+      }
+      .bright {
+        color: var(--bright);
+      }
+
+      .prompt {
+        color: var(--green);
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+      }
+
+      /* Spacing */
+      .mt-1 {
+        margin-top: 0.5rem;
+      }
+      .mt-2 {
+        margin-top: 1rem;
+      }
+      .mt-3 {
+        margin-top: 1.5rem;
+      }
+      .mt-4 {
+        margin-top: 2rem;
+      }
+      .mt-6 {
+        margin-top: 3rem;
+      }
+
+      /* Blinking cursor */
+      .cursor {
+        display: inline-block;
+        width: 0.6em;
+        height: 1.15em;
+        background: var(--green);
+        vertical-align: text-bottom;
+        animation: blink 1s step-end infinite;
+      }
+
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      /* Pause slides */
+      .slide--pause {
+        border-left: 4px solid var(--amber);
+        padding-left: calc(12vw - 4px);
+      }
+
+      .pause-label {
+        display: inline-block;
+        border: 1px solid var(--amber);
+        color: var(--amber);
+        padding: 0.25rem 0.8rem;
+        font-size: 0.85rem;
+        letter-spacing: 0.15em;
+      }
+
+      /* Spectrum */
+      .spectrum-bar {
+        display: flex;
+        gap: 2px;
+        margin: 1.5rem 0 0.5rem;
+      }
+
+      .spectrum-segment {
+        flex: 1;
+        padding: 0.8rem 0.5rem;
+        text-align: center;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        border: 1px solid var(--dim);
+        color: var(--dim);
+        transition: all 0.3s ease;
+      }
+
+      .spectrum-segment.active {
+        border-color: var(--green);
+        color: var(--green);
+        background: rgba(57, 255, 20, 0.04);
+      }
+
+      .spectrum-segment.current {
+        border-color: var(--amber);
+        color: var(--amber);
+        background: rgba(255, 183, 0, 0.06);
+      }
+
+      /* Background images for kitchen slides */
+      .slide-bg {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        filter: grayscale(100%) contrast(1.1) brightness(0.25);
+        opacity: 0.5;
+        z-index: -1;
+      }
+
+      /* Code blocks in slides */
+      .code-block {
+        background: rgba(57, 255, 20, 0.04);
+        border: 1px solid var(--dim);
+        padding: 0.8rem 1.2rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        margin-top: 1rem;
+        overflow: hidden;
+      }
+
+      .code-block .file {
+        color: var(--dim);
+        font-size: 0.85rem;
+        display: block;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid rgba(74, 85, 104, 0.4);
+      }
+
+      /* Section label */
+      .section-label {
+        display: inline-block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        padding: 0.2rem 0.6rem;
+        margin-bottom: 1rem;
+      }
+
+      .section-label.kitchen {
+        border: 1px solid var(--amber);
+        color: var(--amber);
+      }
+
+      .section-label.eng {
+        border: 1px solid var(--green);
+        color: var(--green);
+      }
+
+      /* Compound arrows */
+      .compound-line {
+        font-size: 1.3rem;
+        margin: 0.3rem 0;
+      }
+
+      .compound-line .arrow {
+        color: var(--green);
+        text-shadow: 0 0 8px rgba(57, 255, 20, 0.2);
+      }
+
+      /* Video */
+      .video-wrapper {
+        position: relative;
+        width: 80%;
+        max-width: 640px;
+        padding-bottom: 45%;
+        margin: 1rem 0;
+        border: 1px solid var(--dim);
+        background: #000;
+      }
+
+      .video-wrapper iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+
+      /* Progress bar */
+      .progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        background: var(--green);
+        transition: width 0.4s ease;
+        opacity: 0.4;
+        z-index: 1001;
+      }
+
+      /* Counter */
+      .counter {
+        position: fixed;
+        bottom: 2rem;
+        right: 3rem;
+        color: var(--dim);
+        font-family: var(--font);
+        font-size: 0.85rem;
+        z-index: 1001;
+      }
+
+      /* Boot-specific styles */
+      .boot-cmd {
+        color: var(--green);
+        font-size: 1.2rem;
+        text-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+      }
+      .boot-msg {
+        color: var(--dim);
+        font-size: 1.1rem;
+      }
+      .boot-bar {
+        color: var(--green);
+        font-size: 1.1rem;
+        letter-spacing: 0.05em;
+      }
+      .boot-title {
+        color: var(--bright);
+        font-size: 3rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }
+      .boot-sub {
+        color: var(--text);
+        font-size: 1.25rem;
+      }
+      .boot-hint {
+        color: var(--dim);
+        font-size: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="progress" id="progress"></div>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 0: Boot                               -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide slide--boot active" id="s0">
+      <p class="boot-cmd line" style="--i: 0">$ ./first-rule --present</p>
+      <p class="boot-msg line mt-2" style="--i: 1">[init] loading context...</p>
+      <p class="boot-msg line" style="--i: 2">
+        [init] follow-up: the-new-dimension
+      </p>
+      <p class="boot-msg line" style="--i: 3">[init] audience: engineering</p>
+      <p class="boot-msg line" style="--i: 4">[init] duration: 25 min</p>
+      <p class="boot-bar line mt-1" style="--i: 5">
+        [████████████████████████████████████] 100%
+      </p>
+      <p class="boot-title line mt-6" style="--i: 7">THE FIRST RULE</p>
+      <p class="boot-sub line mt-1" style="--i: 8">
+        building your compound system
+      </p>
+      <p class="boot-hint line mt-6" style="--i: 10">
+        press [SPACE] to begin <span class="cursor"></span>
+      </p>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 1: Recap                              -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide" id="s1">
+      <p class="body line dim" style="--i: 0">last time, we drew the map.</p>
+      <div class="line mt-2" style="--i: 2">
+        <div class="spectrum-bar">
+          <div class="spectrum-segment">MANUAL</div>
+          <div class="spectrum-segment">AI-ASSISTED</div>
+          <div class="spectrum-segment active">COMPOUND</div>
+          <div class="spectrum-segment">AUTONOMOUS</div>
+        </div>
+      </div>
+      <p class="big line mt-4" style="--i: 5">
+        Today: how to build the system.
+      </p>
+      <p class="body line mt-2" style="--i: 7">
+        Five primitives. One running analogy.
+      </p>
+      <p class="body line mt-1 dim" style="--i: 9">
+        We're going to talk about kitchens.
+      </p>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 2: Watch This                         -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide" id="s2">
+      <p class="prompt line" style="--i: 0">$ play kitchen-brigade.mp4</p>
+      <p class="body line mt-2" style="--i: 2">
+        Watch the head chef at the pass. He's not cooking.
+      </p>
+      <!-- TODO: Replace with your preferred clip -->
+      <div class="video-wrapper line mt-2" style="--i: 3">
+        <iframe
+          src="https://www.youtube.com/embed/HnVJpBeDxek?start=0"
+          title="Kitchen brigade in service"
+          allow="
+            accelerometer;
+            autoplay;
+            clipboard-write;
+            encrypted-media;
+            gyroscope;
+            picture-in-picture;
+          "
+          allowfullscreen
+        >
+        </iframe>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 3: That's a Compound System           -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide" id="s3">
+      <p class="big line" style="--i: 0">
+        What you just watched is a <span class="green">compound system</span>.
+      </p>
+      <p class="body line mt-3" style="--i: 3">Every station knows its job.</p>
+      <p class="body line" style="--i: 5">Tickets route work automatically.</p>
+      <p class="body line" style="--i: 7">
+        The kitchen runs because someone
+        <em class="bright">designed the system</em>.
+      </p>
+      <p class="body line dim" style="--i: 9">
+        Not because someone does every task.
+      </p>
+      <div class="line mt-4" style="--i: 12">
+        <div class="spectrum-bar">
+          <div class="spectrum-segment">COMMAND</div>
+          <div class="spectrum-segment">SKILL</div>
+          <div class="spectrum-segment">AGENT</div>
+          <div class="spectrum-segment">AGENT-TEAM</div>
+          <div class="spectrum-segment">HOOK</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 4: Recipe Card → Commands             -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide" id="s4">
+      <div
+        class="slide-bg"
+        style="background-image: url(&quot;images/en/recipe-card.jpg&quot;)"
+      ></div>
+      <div class="line" style="--i: 0">
+        <div class="spectrum-bar">
+          <div class="spectrum-segment current">COMMAND</div>
+          <div class="spectrum-segment">SKILL</div>
+          <div class="spectrum-segment">AGENT</div>
+          <div class="spectrum-segment">AGENT-TEAM</div>
+          <div class="spectrum-segment">HOOK</div>
+        </div>
+      </div>
+      <p class="big line mt-3" style="--i: 2">
+        The Recipe Card <span class="green">&rarr;</span> Commands
+      </p>
+      <p class="body line mt-3" style="--i: 4">
+        <span class="amber">Kitchen:</span> A recipe card at every station. No
+        improvisation. No "I think it was..." The knowledge is in the system,
+        not in someone's head.
+      </p>
+      <p class="body line mt-2" style="--i: 7">
+        <span class="green">Engineering:</span> Encode a task once. Anyone can
+        invoke it. Consistent every time.
+      </p>
+      <div class="code-block line mt-2" style="--i: 10">
+        <span class="file"># .claude/commands/scaffold-feature.md</span>
+        Create branch, scaffold structure, add failing test, create draft PR.<br />
+        Verify: branch exists, test runs and fails, PR is created.
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 5: Prep → Skills                      -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide" id="s5">
+      <div
+        class="slide-bg"
+        style="background-image: url(&quot;images/en/prep-service.jpg&quot;)"
+      ></div>
+      <div class="line" style="--i: 0">
+        <div class="spectrum-bar">
+          <div class="spectrum-segment active">COMMAND</div>
+          <div class="spectrum-segment current">SKILL</div>
+          <div class="spectrum-segment">AGENT</div>
+          <div class="spectrum-segment">AGENT-TEAM</div>
+          <div class="spectrum-segment">HOOK</div>
+        </div>
+      </div>
+      <p class="big line mt-3" style="--i: 2">
+        Prep for Service <span class="green">&rarr;</span> Skills
+      </p>
+      <p class="body line mt-3" style="--i: 4">
+        <span class="amber">Kitchen:</span> Prep isn't a recipe. It's a workflow
+        that makes decisions. 120 covers or 40? What's seasonal? What takes
+        longest? Same job title. Different execution every night.
+      </p>
+      <p class="body line mt-2" style="--i: 7">
+        <span class="green">Engineering:</span> A skill is a command with
+        <em class="bright">judgment</em>. It reads context, assesses the
+        situation, and adapts.
+      </p>
+      <div class="code-block line mt-2" style="--i: 10">
+        <span class="file"># .claude/commands/implement.md</span>
+        Read the spec. Assess blast radius. If 3+ modules, confirm plan
+        first.<br />
+        Follow existing patterns. Test everything. Fix failures before
+        reporting.
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 6: Sous Chef → Agents                 -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide" id="s6">
+      <div
+        class="slide-bg"
+        style="background-image: url(&quot;images/en/sous-chef.jpg&quot;)"
+      ></div>
+      <div class="line" style="--i: 0">
+        <div class="spectrum-bar">
+          <div class="spectrum-segment active">COMMAND</div>
+          <div class="spectrum-segment active">SKILL</div>
+          <div class="spectrum-segment current">AGENT</div>
+          <div class="spectrum-segment">AGENT-TEAM</div>
+          <div class="spectrum-segment">HOOK</div>
+        </div>
+      </div>
+      <p class="big line mt-3" style="--i: 2">
+        The Sous Chef <span class="green">&rarr;</span> Agents
+      </p>
+      <p class="body line mt-3" style="--i: 4">
+        <span class="amber">Kitchen:</span> "You've got fish tonight." That's
+        the entire handoff. They own the station. They deliver the result.
+      </p>
+      <p class="body line mt-2" style="--i: 7">
+        <span class="green">Engineering:</span> An autonomous session. Give it a
+        goal. Go work on something else.
+      </p>
+      <div class="code-block line mt-2" style="--i: 10">
+        <span class="file"># kick off and move on</span>
+        claude -p "Analyze src/auth/**. Write tests for untested paths.<br />
+        &nbsp;&nbsp;Run suite after each. Continue until 90% coverage." &amp;
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 7: Brigade → Agent-Teams              -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide" id="s7">
+      <div
+        class="slide-bg"
+        style="background-image: url(&quot;images/en/brigade.jpg&quot;)"
+      ></div>
+      <div class="line" style="--i: 0">
+        <div class="spectrum-bar">
+          <div class="spectrum-segment active">COMMAND</div>
+          <div class="spectrum-segment active">SKILL</div>
+          <div class="spectrum-segment active">AGENT</div>
+          <div class="spectrum-segment current">AGENT-TEAM</div>
+          <div class="spectrum-segment">HOOK</div>
+        </div>
+      </div>
+      <p class="big line mt-3" style="--i: 2">
+        The Brigade <span class="green">&rarr;</span> Agent-Teams
+      </p>
+      <p class="body line mt-3" style="--i: 4">
+        <span class="amber">Kitchen:</span> Garde manger, saucier,
+        p&acirc;tissier. Each autonomous but coordinated.
+        <em class="bright">"86 the salmon."</em> Together, they serve 200
+        covers.
+      </p>
+      <p class="body line mt-2" style="--i: 7">
+        <span class="green">Engineering:</span> Multiple specialized agents.
+        Same codebase. Running in parallel.
+      </p>
+      <div class="code-block line mt-2" style="--i: 10">
+        <span class="file"
+          ># three reviewers, one PR — each in an isolated worktree</span
+        >
+        Security reviewer &amp; Performance reviewer &amp; Correctness reviewer
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 8: Discussion                         -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide slide--pause" id="s8">
+      <div class="pause-label line" style="--i: 0">DISCUSSION</div>
+      <p class="big line mt-4" style="--i: 2">
+        Which of these could you use this week?
+      </p>
+      <p class="big line mt-2" style="--i: 4">
+        What workflow would you encode first?
+      </p>
+      <p class="line mt-6" style="--i: 6"><span class="cursor"></span></p>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 9: Ticket Printer → Hooks             -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide" id="s9">
+      <div
+        class="slide-bg"
+        style="background-image: url(&quot;images/en/ticket-rail.jpg&quot;)"
+      ></div>
+      <div class="line" style="--i: 0">
+        <div class="spectrum-bar">
+          <div class="spectrum-segment active">COMMAND</div>
+          <div class="spectrum-segment active">SKILL</div>
+          <div class="spectrum-segment active">AGENT</div>
+          <div class="spectrum-segment active">AGENT-TEAM</div>
+          <div class="spectrum-segment current">HOOK</div>
+        </div>
+      </div>
+      <p class="big line mt-3" style="--i: 2">
+        The Ticket Printer <span class="green">&rarr;</span> Hooks
+      </p>
+      <p class="body line mt-3" style="--i: 4">
+        <span class="amber">Kitchen:</span> The POS fires tickets to the right
+        stations automatically. No one reads every order. The system routes
+        work. This takes the head chef off the line.
+      </p>
+      <p class="body line mt-2" style="--i: 7">
+        <span class="green">Engineering:</span> A trigger that removes you from
+        the loop. Events fire. The system responds.
+      </p>
+      <div class="code-block line mt-2" style="--i: 10">
+        <span class="file">// .claude/settings.json</span>
+        PostToolUse: lint every file on Write|Edit<br />
+        Stop: run full test suite when session ends
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 10: The First Rule                    -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide" id="s10">
+      <p class="body line dim" style="--i: 0">five primitives. one rule:</p>
+      <p class="hero line mt-2" style="--i: 2">
+        Never correct the same thing twice.
+      </p>
+      <div class="mt-4">
+        <p class="compound-line line" style="--i: 5">
+          explain it and it works <span class="arrow">&rarr;</span>
+          <span class="bright">command</span>
+        </p>
+        <p class="compound-line line" style="--i: 7">
+          command needs judgment <span class="arrow">&rarr;</span>
+          <span class="bright">skill</span>
+        </p>
+        <p class="compound-line line" style="--i: 9">
+          skill should run alone <span class="arrow">&rarr;</span>
+          <span class="bright">agent</span>
+        </p>
+        <p class="compound-line line" style="--i: 11">
+          one agent isn't enough <span class="arrow">&rarr;</span>
+          <span class="bright">team</span>
+        </p>
+        <p class="compound-line line" style="--i: 13">
+          tired of invoking it <span class="arrow">&rarr;</span>
+          <span class="bright">hook</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 11: The Head Chef                     -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide" id="s11">
+      <p class="big line" style="--i: 0">
+        The head chef doesn't cook every dish.
+      </p>
+      <p class="hero line mt-4 green" style="--i: 4">
+        The head chef built the kitchen.
+      </p>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 12: Your Move                         -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide" id="s12">
+      <p class="big line" style="--i: 0">Your move.</p>
+      <p class="body line mt-4" style="--i: 3">
+        <span class="green">this week</span> &mdash; pick one thing you
+        corrected the AI on. turn it into a command, a rule, or a hook.
+      </p>
+      <p class="body line mt-3 dim" style="--i: 6">
+        the first rule isn't "automate everything."
+      </p>
+      <p class="big line mt-2 green" style="--i: 9">
+        Don't correct the same thing twice.
+      </p>
+      <p class="body line mt-4 dim" style="--i: 12">bring it back next week.</p>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 13: Open Discussion                   -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="slide slide--pause" id="s13">
+      <div class="pause-label line" style="--i: 0">OPEN FLOOR</div>
+      <p class="prompt line mt-4" style="--i: 2">$ open discussion</p>
+      <p class="hero line mt-4" style="--i: 4">
+        Let's talk. <span class="cursor"></span>
+      </p>
+    </section>
+
+    <div class="counter" id="counter"></div>
+
+    <script>
+      const slides = document.querySelectorAll(".slide");
+      const counter = document.getElementById("counter");
+      const progress = document.getElementById("progress");
+      const total = slides.length;
+      let current = 0;
+
+      function showSlide(n) {
+        if (n < 0 || n >= total) return;
+        slides[current].classList.remove("active");
+        current = n;
+        slides[current].classList.add("active");
+        counter.textContent = `${String(current + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
+        progress.style.width = `${((current + 1) / total) * 100}%`;
+      }
+
+      function next() {
+        showSlide(current + 1);
+      }
+      function prev() {
+        showSlide(current - 1);
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === " " || e.key === "ArrowDown") {
+          e.preventDefault();
+          next();
+        }
+        if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+          e.preventDefault();
+          prev();
+        }
+        if (e.key === "f") {
+          if (document.fullscreenElement) document.exitFullscreen();
+          else document.documentElement.requestFullscreen();
+        }
+      });
+
+      document.addEventListener("click", (e) => {
+        if (e.clientX > window.innerWidth / 2) next();
+        else prev();
+      });
+
+      showSlide(0);
+    </script>
+  </body>
+</html>
